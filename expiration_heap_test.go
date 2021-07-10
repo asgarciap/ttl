@@ -135,17 +135,15 @@ func TestNotifyExpirationHeapChannel(t *testing.T) {
 		lock.RUnlock()
 
 		for {
-			select {
-			case <-heap.NotifyCh:
-				lock.RLock()
-				newExpiration := heap.NextExpiration()
-				len := heap.Len()
-				lock.RUnlock()
-				assert.True(t, newExpiration.Before(currenExpiration))
-				currenExpiration = newExpiration
-				if len == NumEntriesInsert {
-					return
-				}
+			<-heap.NotifyCh
+			lock.RLock()
+			newExpiration := heap.NextExpiration()
+			len := heap.Len()
+			lock.RUnlock()
+			assert.True(t, newExpiration.Before(currenExpiration))
+			currenExpiration = newExpiration
+			if len == NumEntriesInsert {
+				return
 			}
 		}
 	}()
