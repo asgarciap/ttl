@@ -165,6 +165,8 @@ func TestCache_TestTouch(t *testing.T) {
 	expired := false
 	lock.Unlock()
 
+	assert.Equal(t, cache.Touch("not-key"), ErrNotFound)
+
 	cache.SkipTTLExtensionOnHit(true)
 	cache.SetExpirationCallback(func(key string, value interface{}) {
 		lock.Lock()
@@ -174,9 +176,6 @@ func TestCache_TestTouch(t *testing.T) {
 
 	cache.SetWithTTL("key", "data", time.Millisecond*900)
 	<-time.After(time.Millisecond * 500)
-
-	// no Touch
-	//	cache.Touch("key")
 
 	<-time.After(time.Millisecond * 500)
 	lock.Lock()
@@ -844,7 +843,6 @@ func TestCacheGetKeys(t *testing.T) {
 	t.Parallel()
 
 	cache := NewCache()
-	defer cache.Close()
 
 	keys := cache.GetKeys()
 	assert.Empty(t, keys, "Expected keys to be empty")
@@ -853,6 +851,9 @@ func TestCacheGetKeys(t *testing.T) {
 	keys = cache.GetKeys()
 	assert.NotEmpty(t, keys, "Expected keys to be not empty")
 	assert.Equal(t, []string{"hello"}, keys, "Expected keys contains 'hello'")
+	cache.Close()
+	keys = cache.GetKeys()
+	assert.Nil(t, keys, "Expected keys to nil for a closed cache")
 }
 
 func TestCacheExpirationCallbackFunction(t *testing.T) {
