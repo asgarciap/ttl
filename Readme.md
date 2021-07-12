@@ -22,7 +22,7 @@ Note (issue #25): by default, due to historic reasons, the TTL will be reset on 
 
 ## Usage
 
-`go get github.com/ReneKroon/ttlcache/v2`
+`go get github.com/asgarciap/ttlcache/v3`
 
 You can copy it as a full standalone demo program. The first snippet is basic usage, where the second exploits more options in the cache.
 
@@ -34,7 +34,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ReneKroon/ttlcache/v2"
+	"github.com/asgarciap/ttlcache/v3"
 )
 
 var notFound = ttlcache.ErrNotFound
@@ -64,7 +64,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ReneKroon/ttlcache/v2"
+	"github.com/asgarciap/ttlcache/v3"
 )
 
 var (
@@ -111,11 +111,13 @@ func main() {
 	if value, exists := cache.Get("key"); exists == nil {
 		fmt.Printf("Got value: %v\n", value)
 	}
+	if v, ttl, e := cache.GetWithTTL("key"); e == nil {
+		fmt.Printf("Got value: %v which still have a ttl of: %v\n", v, ttl)
+	}
 	count := cache.Count()
 	if result := cache.Remove("keyNNN"); result == notFound {
 		fmt.Printf("Not found, %d items left\n", count)
 	}
-
 	cache.Set("key6", "value")
 	cache.Set("key7", "value")
 	metrics := cache.GetMetrics()
@@ -139,8 +141,10 @@ func getFromNetwork(key string) (string, error) {
 
 ### Original Project
 
-TTLCache was forked from [wunderlist/ttlcache](https://github.com/wunderlist/ttlcache) to add extra functions not avaiable in the original scope.
-The main differences are:
+TTLCache was forked from [ReneKroon/ttlcache](https://github.com/ReneKroon/ttlcache) which in turn is a fork from  [wunderlist/ttlcache](https://github.com/wunderlist/ttlcache)
+to add extra functions not avaiable in the original scope.
+
+The main differences that [ReneKroon/ttlcache](https://github.com/ReneKroon/ttlcache) has from the original project are:
 
 1. A item can store any kind of object, previously, only strings could be saved
 2. Optionally, you can add callbacks too: check if a value should expire, be notified if a value expires, and be notified when new values are added to the cache
@@ -148,3 +152,11 @@ The main differences are:
 4. Items can exist without expiration time (time.Zero)
 5. Expirations and callbacks are realtime. Don't have a pooling time to check anymore, now it's done with a heap.
 6. A cache count limiter
+
+This fork differs in the following aspects:
+
+1. We add a new GetWithTTL function to get the available TTL (as time.Duration) that an item has when recovering from the cache
+2. We rename the priority_queue.go file/struct to ExpirationHeap and expose it so we can use it independently
+3. Metrics for eviction are more detailed (EvictedFull, EvictedClosed, EvictedExpired)
+3. 100% test coverage
+4. Build checks are now done with github actions
