@@ -1,4 +1,5 @@
-# TTL - Provides an in-memory cache with expiration and an ExpirationHeap that order the items using a TTL value
+# TTL Cache + ExpirationHeap
+Provides an in-memory cache with expiration and an ExpirationHeap that order the items using a TTL value
 
 [![Documentation](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/asgarciap/ttl)
 [![Release](https://img.shields.io/github/release/asgarciap/ttl.svg?label=Release)](https://github.com/asgarciap/ttl/releases)
