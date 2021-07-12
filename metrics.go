@@ -10,6 +10,10 @@ type Metrics struct {
 	Hits int64
 	// entries not in cache (includes loader invocations)
 	Misses int64
-	// items removed from the cache in any way
-	Evicted int64
+	// items removed from the cache due to a full size
+	EvictedFull int64
+	// items removed from the cache due to expiration
+	EvictedExpired int64
+	// items removed from the cache due to a close call
+	EvictedClosed int64
 }

@@ -42,7 +42,7 @@ type Cache struct {
 	expireReasonCallback   ExpireReasonCallback
 	checkExpireCallback    CheckExpireCallback
 	newItemCallback        ExpireCallback
-	priorityQueue          *priorityQueue
+	expirationHeap         *ExpirationHeap
 	expirationNotification chan bool
 	expirationTime         time.Time
 	skipTTLExtension       bool
@@ -94,7 +94,7 @@ func (cache *Cache) getItem(key string) (*item, bool, bool) {
 		if !cache.skipTTLExtension {
 			item.touch()
 		}
-		cache.priorityQueue.update(item)
+		cache.expirationHeap.Update(item)
 	}
 
 	expirationNotification := false
@@ -109,9 +109,9 @@ func (cache *Cache) startExpirationProcessing() {
 	for {
 		var sleepTime time.Duration
 		cache.mutex.Lock()
-		if cache.priorityQueue.Len() > 0 {
-			sleepTime = time.Until(cache.priorityQueue.items[0].expireAt)
-			if sleepTime < 0 && cache.priorityQueue.items[0].expireAt.IsZero() {
+		if cache.expirationHeap.Len() > 0 {
+			sleepTime = time.Until(cache.expirationHeap.Peek().ExpiresAt())
+			if sleepTime < 0 && cache.expirationHeap.Peek().ExpiresAt().IsZero() {
 				sleepTime = time.Hour
 			} else if sleepTime < 0 {
 				sleepTime = time.Microsecond
@@ -128,13 +128,12 @@ func (cache *Cache) startExpirationProcessing() {
 
 		cache.expirationTime = time.Now().Add(sleepTime)
 		cache.mutex.Unlock()
-
 		timer.Reset(sleepTime)
 		select {
 		case shutdownFeedback := <-cache.shutdownSignal:
 			timer.Stop()
 			cache.mutex.Lock()
-			if cache.priorityQueue.Len() > 0 {
+			if cache.expirationHeap.Len() > 0 {
 				cache.evictjob(Closed)
 			}
 			cache.mutex.Unlock()
@@ -143,11 +142,10 @@ func (cache *Cache) startExpirationProcessing() {
 		case <-timer.C:
 			timer.Stop()
 			cache.mutex.Lock()
-			if cache.priorityQueue.Len() == 0 {
+			if cache.expirationHeap.Len() == 0 {
 				cache.mutex.Unlock()
 				continue
 			}
-
 			cache.cleanjob()
 			cache.mutex.Unlock()
 
@@ -168,46 +166,37 @@ func (cache *Cache) checkExpirationCallback(item *item, reason EvictionReason) {
 }
 
 func (cache *Cache) removeItem(item *item, reason EvictionReason) {
-	cache.metrics.Evicted++
+	switch reason {
+	case EvictedSize:
+		cache.metrics.EvictedFull++
+	case Expired:
+		cache.metrics.EvictedExpired++
+	case Closed:
+		cache.metrics.EvictedClosed++
+	}
 	cache.checkExpirationCallback(item, reason)
-	cache.priorityQueue.remove(item)
+	cache.expirationHeap.Remove(item)
 	delete(cache.items, item.key)
 
 }
 
 func (cache *Cache) evictjob(reason EvictionReason) {
-	// index will only be advanced if the current entry will not be evicted
-	i := 0
-	for item := cache.priorityQueue.items[i]; ; item = cache.priorityQueue.items[i] {
-
-		cache.removeItem(item, reason)
-		if cache.priorityQueue.Len() == 0 {
-			return
-		}
+	for citem := cache.expirationHeap.Peek(); citem != nil; citem = cache.expirationHeap.Peek() {
+		cache.removeItem(citem.(*item), reason)
 	}
 }
 
 func (cache *Cache) cleanjob() {
-	// index will only be advanced if the current entry will not be evicted
-	i := 0
-	for item := cache.priorityQueue.items[i]; item.expired(); item = cache.priorityQueue.items[i] {
-
+	for citem := cache.expirationHeap.Peek(); citem != nil && citem.(*item).expired(); citem = cache.expirationHeap.Peek() {
+		nitem := citem.(*item)
 		if cache.checkExpireCallback != nil {
-			if !cache.checkExpireCallback(item.key, item.data) {
-				item.touch()
-				cache.priorityQueue.update(item)
-				i++
-				if i == cache.priorityQueue.Len() {
-					break
-				}
+			if !cache.checkExpireCallback(nitem.key, nitem.data) {
+				nitem.touch()
+				cache.expirationHeap.Update(citem)
 				continue
 			}
 		}
-
-		cache.removeItem(item, Expired)
-		if cache.priorityQueue.Len() == 0 {
-			return
-		}
+		cache.removeItem(nitem, Expired)
 	}
 }
 
@@ -243,31 +232,31 @@ func (cache *Cache) SetWithTTL(key string, data interface{}, ttl time.Duration) 
 		cache.mutex.Unlock()
 		return ErrClosed
 	}
-	item, exists, _ := cache.getItem(key)
+	citem, exists, _ := cache.getItem(key)
 
 	if exists {
-		item.data = data
-		item.ttl = ttl
+		citem.data = data
+		citem.ttl = ttl
 	} else {
 		if cache.sizeLimit != 0 && len(cache.items) >= cache.sizeLimit {
-			cache.removeItem(cache.priorityQueue.items[0], EvictedSize)
+			cache.removeItem(cache.expirationHeap.Peek().(*item), EvictedSize)
 		}
-		item = newItem(key, data, ttl)
-		cache.items[key] = item
+		citem = newItem(key, data, ttl)
+		cache.items[key] = citem
 	}
 	cache.metrics.Inserted++
 
-	if item.ttl >= 0 && (item.ttl > 0 || cache.ttl > 0) {
-		if cache.ttl > 0 && item.ttl == 0 {
-			item.ttl = cache.ttl
+	if citem.ttl >= 0 && (citem.ttl > 0 || cache.ttl > 0) {
+		if cache.ttl > 0 && citem.ttl == 0 {
+			citem.ttl = cache.ttl
 		}
-		item.touch()
+		citem.touch()
 	}
 
 	if exists {
-		cache.priorityQueue.update(item)
+		cache.expirationHeap.Update(citem)
 	} else {
-		cache.priorityQueue.push(item)
+		cache.expirationHeap.Add(citem)
 	}
 
 	cache.mutex.Unlock()
@@ -478,9 +467,9 @@ func (cache *Cache) SetLoaderFunction(loader LoaderFunction) {
 func (cache *Cache) Purge() error {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
-	cache.metrics.Evicted += int64(len(cache.items))
+	cache.metrics.EvictedClosed += int64(len(cache.items))
 	cache.items = make(map[string]*item)
-	cache.priorityQueue = newPriorityQueue()
+	cache.expirationHeap = NewExpirationHeap()
 	return nil
 }
 
@@ -501,7 +490,7 @@ func NewCache() *Cache {
 	cache := &Cache{
 		items:                  make(map[string]*item),
 		loaderLock:             &singleflight.Group{},
-		priorityQueue:          newPriorityQueue(),
+		expirationHeap:         NewExpirationHeap(),
 		expirationNotification: make(chan bool),
 		expirationTime:         time.Now(),
 		shutdownSignal:         shutdownChan,
