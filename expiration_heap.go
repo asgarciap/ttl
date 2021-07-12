@@ -70,6 +70,12 @@ func (h ExpirationHeap) Len() int {
 //and compare to item within the queue
 //Dont call this directly!
 func (h ExpirationHeap) Less(i, j int) bool {
+	if h.entries[i].ExpiresAt().IsZero() {
+		return false
+	}
+	if h.entries[j].ExpiresAt().IsZero() {
+		return true
+	}
 	return h.entries[i].ExpiresAt().Before(h.entries[j].ExpiresAt())
 }
 
@@ -132,6 +138,14 @@ func (h *ExpirationHeap) First() ExpirationHeapEntry {
 		return nil
 	}
 	return heap.Pop(h).(ExpirationHeapEntry)
+}
+
+//Peek get the first element in the heap without removing it
+func (h *ExpirationHeap) Peek() ExpirationHeapEntry {
+	if h.Len() == 0 {
+		return nil
+	}
+	return h.entries[0]
 }
 
 //Remove removes an entry from the heap

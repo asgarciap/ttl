@@ -218,7 +218,7 @@ func TestCache_TestMetrics(t *testing.T) {
 	assert.Equal(t, int64(1), metrics.Retrievals)
 	cache.Purge()
 	metrics = cache.GetMetrics()
-	assert.Equal(t, int64(2), metrics.Evicted)
+	assert.Equal(t, int64(2), metrics.EvictedClosed)
 
 	cache.SetWithTTL("3", "3", time.Nanosecond)
 	cache.SetWithTTL("4", "4", time.Nanosecond)
@@ -226,7 +226,7 @@ func TestCache_TestMetrics(t *testing.T) {
 	time.Sleep(time.Millisecond * 10)
 
 	metrics = cache.GetMetrics()
-	assert.Equal(t, int64(4), metrics.Evicted)
+	assert.Equal(t, int64(2), metrics.EvictedExpired)
 
 }
 
@@ -937,7 +937,6 @@ func TestCacheRemove(t *testing.T) {
 
 	cache := NewCache()
 	defer cache.Close()
-
 	cache.SetTTL(time.Duration(50 * time.Millisecond))
 	cache.SetWithTTL("key", "value", time.Duration(100*time.Millisecond))
 	cache.Set("key_2", "value")

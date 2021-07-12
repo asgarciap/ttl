@@ -37,10 +37,25 @@ func (item *item) touch() {
 	}
 }
 
-// Verify if the item is expired
+// expired verify if the item is expired
 func (item *item) expired() bool {
 	if item.ttl <= 0 {
 		return false
 	}
 	return item.expireAt.Before(time.Now())
+}
+
+// ExpiresAt meets the ExpirationHeapEntry interface
+func (item *item) ExpiresAt() time.Time {
+	return item.expireAt
+}
+
+// SetIndex meets the ExpirationHeapEntry interface
+func (item *item) SetIndex(index int) {
+	item.queueIndex = index
+}
+
+// GetIndex meets the ExpirationHeapEntry interface
+func (item *item) GetIndex() int {
+	return item.queueIndex
 }
