@@ -1,4 +1,4 @@
-module github.com/asgarciap/ttl
+module github.com/asgarciap/ttl/v3
 
 go 1.16
 
