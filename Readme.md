@@ -28,7 +28,7 @@ A NotifyCh es used to know when the first element in the queue is updated.
 
 ## Usage
 
-`go get github.com/asgarciap/ttl`
+`go get github.com/asgarciap/ttl/v3`
 
 You can copy it as a full standalone demo program. The first snippet is basic usage, where the second exploits more options in the cache.
 
@@ -41,7 +41,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/asgarciap/ttl"
+	"github.com/asgarciap/ttl/v3"
 )
 
 var notFound = ttl.ErrNotFound
@@ -71,7 +71,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/asgarciap/ttl"
+	"github.com/asgarciap/ttl/v3"
 )
 
 var (
@@ -149,7 +149,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/asgarciap/ttl"
+	"github.com/asgarciap/ttl/v3"
 )
 
 type struct MyStruct {
