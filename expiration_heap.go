@@ -1,4 +1,4 @@
-package ttlcache
+package ttl
 
 import (
 	"container/heap"
@@ -33,7 +33,7 @@ type ExpirationHeapEntry interface {
 	SetIndex(int)
 }
 
-//ExpirationHeap
+//ExpirationHeap is the struct used in container/heap
 type ExpirationHeap struct {
 	entries []ExpirationHeapEntry
 	//A channel used to notify when the first element (index=0)
@@ -41,7 +41,7 @@ type ExpirationHeap struct {
 	NotifyCh chan struct{}
 }
 
-//Index assigned to an entry that was removed from the heap
+//EntryNotIndexed is the index value assigned to an entry that was removed from the heap
 const EntryNotIndexed = -1
 
 //NewExpirationHeap creates a new ExpirationHeap
@@ -109,9 +109,9 @@ func (h *ExpirationHeap) Push(x interface{}) {
 	}
 }
 
-//Len meets the container/heap interface
+//Pop meets the container/heap interface
 //and removes the first item in the heap
-//Dont call this directly!
+//Don not call this directly!
 func (h *ExpirationHeap) Pop() interface{} {
 	heapEntries := h.entries
 	l := len(heapEntries)
@@ -153,7 +153,7 @@ func (h *ExpirationHeap) Remove(entry ExpirationHeapEntry) {
 	heap.Remove(h, entry.GetIndex())
 }
 
-//Get the lower ttl in the heap. The ttl from the element with index 0
+//NextExpiration gets the lower ttl in the heap. The ttl from the element with index 0
 func (h *ExpirationHeap) NextExpiration() time.Time {
 	if h.Len() == 0 {
 		return time.Time{}

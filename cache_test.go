@@ -1,4 +1,4 @@
-package ttlcache_test
+package ttl_test
 
 import (
 	"math/rand"
@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"sync"
 
-	. "github.com/asgarciap/ttlcache/v2"
+	. "github.com/asgarciap/ttl"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,7 +81,7 @@ func TestCache_GetByLoaderRace(t *testing.T) {
 
 // Issue / PR #39: add customer loader function for each Get() #
 // some middleware prefers to define specific context's etc per Get.
-// This is faciliated by supplying a loder function with Get's.
+// This is facilitated by supplying a loder function with Get's.
 func TestCache_GetByLoader(t *testing.T) {
 	t.Parallel()
 	cache := NewCache()

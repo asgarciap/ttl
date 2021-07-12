@@ -1,4 +1,4 @@
-package ttlcache
+package ttl
 
 import (
 	"fmt"
@@ -54,17 +54,17 @@ func TestExpirationHeapFirst(t *testing.T) {
 	}
 	for i := 0; i < 5; i++ {
 		item := heap.First()
-		assert.Equal(t, fmt.Sprintf("%T", item), "*ttlcache.testExpirationItem", "Expected 'item' to be a '*ttlcache.testExpirationItem'")
+		assert.Equal(t, fmt.Sprintf("%T", item), "*ttl.testExpirationItem", "Expected 'item' to be a '*ttl.testExpirationItem'")
 	}
 	assert.Equal(t, heap.Len(), 5, "Expected heap to have 5 elements")
 	for i := 0; i < 5; i++ {
 		item := heap.First()
-		assert.Equal(t, fmt.Sprintf("%T", item), "*ttlcache.testExpirationItem", "Expected 'item' to be a '*ttlcache.testExpirationItem'")
+		assert.Equal(t, fmt.Sprintf("%T", item), "*ttl.testExpirationItem", "Expected 'item' to be a '*ttl.testExpirationItem'")
 	}
 	assert.Equal(t, heap.Len(), 0, "Expected heap to have 0 elements")
 
 	item := heap.First()
-	assert.Nil(t, item, "ttlcache.testExpirationItem", "Expected 'item' to be nil")
+	assert.Nil(t, item, "ttl.testExpirationItem", "Expected 'item' to be nil")
 }
 
 func TestExpirationHeapCheckOrder(t *testing.T) {
