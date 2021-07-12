@@ -1,4 +1,4 @@
-package ttlcache_test
+package ttl_test
 
 import (
 	"math/rand"
@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"sync"
 
-	. "github.com/asgarciap/ttlcache/v3"
+	. "github.com/asgarciap/ttl"
 	"github.com/stretchr/testify/assert"
 )
 

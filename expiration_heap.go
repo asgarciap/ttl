@@ -1,4 +1,4 @@
-package ttlcache
+package ttl
 
 import (
 	"container/heap"

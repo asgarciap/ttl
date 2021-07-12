@@ -1,4 +1,4 @@
-package ttlcache
+package ttl
 
 // Metrics contains common cache metrics so you can calculate hit and miss rates
 type Metrics struct {
