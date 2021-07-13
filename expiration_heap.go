@@ -127,7 +127,9 @@ func (h *ExpirationHeap) Pop() interface{} {
 
 //Update uptade an entry in the heap
 func (h *ExpirationHeap) Update(entry ExpirationHeapEntry) {
-	heap.Fix(h, entry.GetIndex())
+	if entry.GetIndex() != EntryNotIndexed {
+		heap.Fix(h, entry.GetIndex())
+	}
 }
 
 //Add a new entry in the heap
