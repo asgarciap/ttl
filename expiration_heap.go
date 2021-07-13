@@ -27,6 +27,9 @@ import (
 //the index used and to know when the entry will expire.
 //Since we are not keeping the index ourself you must be sure than
 //you dont modify the index value in your own entry implementation!!
+//Use this with caution. We are relying in the Set/Get Index methods
+//to keep the objects in the underlying heap. Do not change those ones
+//in your entry object.
 type ExpirationHeapEntry interface {
 	ExpiresAt() time.Time
 	GetIndex() int
@@ -148,9 +151,13 @@ func (h *ExpirationHeap) Peek() ExpirationHeapEntry {
 	return h.entries[0]
 }
 
-//Remove removes an entry from the heap
+//Remove removes an entry from the heap. Note that this just try to remove
+//the entry acording to the index it has. It wont check if the object is really
+//the same we are sending.
 func (h *ExpirationHeap) Remove(entry ExpirationHeapEntry) {
-	heap.Remove(h, entry.GetIndex())
+	if entry.GetIndex() != EntryNotIndexed {
+		heap.Remove(h, entry.GetIndex())
+	}
 }
 
 //NextExpiration gets the lower ttl in the heap. The ttl from the element with index 0
